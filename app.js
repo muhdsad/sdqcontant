@@ -1254,3 +1254,48 @@ function showToast(message, type = "info") {
         }, 300);
     }, 3500);
 }
+
+// ==========================================================================
+// 13. PWA Installation & Service Worker Registration
+// ==========================================================================
+let deferredInstallPrompt = null;
+const installPwaBtn = document.getElementById("install-pwa-btn");
+
+// Register Service Worker for offline capability & PWA installability
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js")
+            .then((reg) => console.log("Nexus ServiceWorker registered:", reg.scope))
+            .catch((err) => console.warn("ServiceWorker registration error:", err));
+    });
+}
+
+// Android / Chrome Install Prompt
+window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (installPwaBtn) {
+        installPwaBtn.style.display = "inline-flex";
+    }
+});
+
+if (installPwaBtn) {
+    installPwaBtn.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) {
+            showToast("To install, tap your browser menu (⋮) and select 'Install app' or 'Add to Home Screen'.", "info");
+            return;
+        }
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === "accepted") {
+            showToast("Nexus Contacts is being installed on your device!", "success");
+            installPwaBtn.style.display = "none";
+        }
+        deferredInstallPrompt = null;
+    });
+}
+
+window.addEventListener("appinstalled", () => {
+    showToast("Nexus Contacts installed successfully! Check your app drawer.", "success");
+    if (installPwaBtn) installPwaBtn.style.display = "none";
+});
