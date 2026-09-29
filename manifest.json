@@ -1,7 +1,10 @@
 {
-  "name": "Nexus Contacts — Smart Directory",
-  "short_name": "Contacts",
-  "description": "Modern, vibrant contact directory with real-time cloud sync and offline access.",
+  "id": "./",
+  "name": "Nexus Contacts",
+  "short_name": "Nexus",
+  "description": "Modern vibrant contact directory with real-time cloud sync and offline access.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -12,19 +15,33 @@
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "maskable"
     }
   ],
-  "categories": ["productivity", "utilities"]
+  "screenshots": [
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Nexus Contacts Mobile View"
+    }
+  ],
+  "categories": [
+    "productivity",
+    "utilities"
+  ]
 }
