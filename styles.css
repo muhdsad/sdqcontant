@@ -1548,6 +1548,10 @@ tbody tr:last-child td {
 }
 
 /* Delete Window */
+#delete-modal {
+    z-index: 1100;
+}
+
 .delete-window {
     width: 440px;
     text-align: center;

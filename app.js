@@ -391,13 +391,13 @@ function renderGridView(contacts) {
                 </div>
 
                 <div class="action-group-right" style="display: flex; gap: 6px;">
-                    <button class="action-icon-btn btn-edit" onclick="openEditModal('${contact.id}')" title="Edit Contact">
+                    <button class="action-icon-btn btn-edit" onclick="openEditModal('${contact.id}', event)" title="Edit Contact">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-icon-btn btn-delete" onclick="promptDelete('${contact.id}')" title="Delete Contact">
+                    <button class="action-icon-btn btn-delete" onclick="promptDelete('${contact.id}', event)" title="Delete Contact">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -494,13 +494,13 @@ function renderListView(contacts) {
                         </svg>
                     </a>
                 ` : ''}
-                <button class="action-icon-btn btn-edit" onclick="openEditModal('${contact.id}')" title="Edit Contact">
+                <button class="action-icon-btn btn-edit" onclick="openEditModal('${contact.id}', event)" title="Edit Contact">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                 </button>
-                <button class="action-icon-btn btn-delete" onclick="promptDelete('${contact.id}')" title="Delete Contact">
+                <button class="action-icon-btn btn-delete" onclick="promptDelete('${contact.id}', event)" title="Delete Contact">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -550,13 +550,13 @@ function renderTableView(contacts) {
             <td><span style="font-size:0.8rem; color:var(--text-muted);">${detailsEscaped}</span></td>
             <td style="text-align: right;">
                 <div style="display: inline-flex; gap: 6px; justify-content: flex-end;">
-                    <button class="action-icon-btn" onclick="openEditModal('${contact.id}')" title="Edit">
+                    <button class="action-icon-btn" onclick="openEditModal('${contact.id}', event)" title="Edit">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-icon-btn btn-delete" onclick="promptDelete('${contact.id}')" title="Delete">
+                    <button class="action-icon-btn btn-delete" onclick="promptDelete('${contact.id}', event)" title="Delete">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -649,6 +649,8 @@ function escapeHtml(str) {
 // 6. Modal & Form Handling
 // ==========================================================================
 function openAddModal() {
+    closeDeleteModal();
+    closeContactDetails();
     editingContactId = null;
     currentImageBase64 = "";
     contactForm.reset();
@@ -666,7 +668,9 @@ function openAddModal() {
     nameInput.focus();
 }
 
-function openEditModal(id) {
+function openEditModal(id, event) {
+    if (event) event.stopPropagation();
+    closeDeleteModal();
     const contact = allContacts.find(c => c.id === id);
     if (!contact) return;
 
@@ -864,7 +868,9 @@ async function toggleFavorite(id, event) {
 // ==========================================================================
 // 8. Delete Confirmation Modal
 // ==========================================================================
-function promptDelete(id) {
+function promptDelete(id, event) {
+    if (event) event.stopPropagation();
+    closeContactDetails();
     const contact = allContacts.find(c => c.id === id);
     if (!contact) return;
 
@@ -872,12 +878,19 @@ function promptDelete(id) {
     deleteContactName.textContent = `"${contact.name || 'this contact'}"`;
     deleteModal.classList.add("active");
     deleteModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
 }
 
 function closeDeleteModal() {
     deleteModal.classList.remove("active");
     deleteModal.setAttribute("aria-hidden", "true");
     pendingDeleteId = null;
+    const contactModalActive = contactModal && contactModal.classList.contains("active");
+    const sheetModal = document.getElementById("contact-details-modal");
+    const sheetModalActive = sheetModal && sheetModal.classList.contains("active");
+    if (!contactModalActive && !sheetModalActive) {
+        document.body.style.overflow = "";
+    }
 }
 
 deleteCancelBtn.addEventListener("click", closeDeleteModal);
@@ -888,22 +901,22 @@ deleteConfirmBtn.addEventListener("click", async () => {
     const id = pendingDeleteId;
     closeDeleteModal();
 
+    // 1. Immediately delete from local state and update UI
+    allContacts = allContacts.filter(c => c.id !== id);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allContacts));
+    render();
+
+    // 2. Sync deletion with Firestore if online and it is a persistent cloud document
     try {
-        if (isFirebaseOnline && db) {
+        if (isFirebaseOnline && db && !id.startsWith("mock-")) {
             await db.collection(COLLECTION_NAME).doc(id).delete();
             showToast("Contact deleted from cloud.", "success");
         } else {
-            allContacts = allContacts.filter(c => c.id !== id);
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allContacts));
-            render();
-            showToast("Contact deleted.", "success");
+            showToast("Contact deleted successfully.", "success");
         }
     } catch (err) {
         console.error("Delete error:", err);
-        allContacts = allContacts.filter(c => c.id !== id);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allContacts));
-        render();
-        showToast("Deleted locally.", "info");
+        showToast("Contact deleted locally.", "info");
     }
 });
 
