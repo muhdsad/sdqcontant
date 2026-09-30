@@ -173,11 +173,18 @@ function initApp() {
         return;
     }
 
+function isDefaultMockDataset(contacts) {
+    if (!contacts || contacts.length !== 4) return false;
+    const names = contacts.map(c => c.name).sort().join("|");
+    const defaultNames = ["Alexander Vance", "David Kim", "Elena Rostova", "Sarah Jenkins"].sort().join("|");
+    return names === defaultNames;
+}
+
 let lastSyncErrorMessage = "";
 
 // Try listening to Firestore
     try {
-        db.collection(COLLECTION_NAME).orderBy("name").onSnapshot((snapshot) => {
+        db.collection(COLLECTION_NAME).orderBy("name").onSnapshot(async (snapshot) => {
             isFirebaseOnline = true;
             lastSyncErrorMessage = "";
             updateSyncBadge("online", "Firebase Synced");
@@ -187,17 +194,46 @@ let lastSyncErrorMessage = "";
                 fetched.push({ id: doc.id, ...doc.data() });
             });
 
+            // If Cloud Firestore is empty, check if this device has custom user contacts in localStorage to migrate!
+            if (snapshot.empty) {
+                const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (cached) {
+                    try {
+                        const localList = JSON.parse(cached);
+                        // If user has real contacts (not the 4 initial dummy mock contacts)
+                        if (Array.isArray(localList) && localList.length > 0 && !isDefaultMockDataset(localList)) {
+                            console.log("Migrating custom local contacts to Cloud Firestore...");
+                            for (const c of localList) {
+                                const { id, ...data } = c;
+                                await db.collection(COLLECTION_NAME).add({
+                                    ...data,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            }
+                            showToast("Migrated local contacts to Cloud Firestore!", "success");
+                            return; // onSnapshot will trigger automatically with cloud data
+                        }
+                    } catch (e) {
+                        console.warn("Migration check error:", e);
+                    }
+                }
+            }
+
             allContacts = fetched;
             // Backup locally
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allContacts));
             render();
         }, (error) => {
             console.warn("Firestore onSnapshot error:", error);
-            if (error && error.code === 'permission-denied') {
+            const errStr = (error && (error.message || error.code)) || "";
+            if (errStr.includes("not exist") || error.code === 'not-found') {
+                lastSyncErrorMessage = "Firestore Database has not been created yet. Please visit Firebase Console > Firestore Database > Create Database.";
+                enableLocalStorageMode("Firestore Database not created yet in Firebase Console.");
+            } else if (error && error.code === 'permission-denied') {
                 lastSyncErrorMessage = "Permission Denied: Please check Firestore Rules in Firebase Console (allow read, write on 'contacts').";
                 enableLocalStorageMode("Firebase Permission Denied. Check Firestore Rules in Console.");
             } else {
-                lastSyncErrorMessage = (error && error.message) || "Firebase connection error. Check Firestore database setup.";
+                lastSyncErrorMessage = (error && error.message) || "Firebase connection error. Running locally.";
                 enableLocalStorageMode("Local Mode (Firebase offline/unavailable)");
             }
         });
