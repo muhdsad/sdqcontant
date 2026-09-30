@@ -15,13 +15,13 @@
 // 1. Firebase Configuration & Initialization
 // ==========================================================================
 const firebaseConfig = {
-    apiKey: "AIzaSyAmzIa1fQi7oQX6AYq7edL5xysTliJf-Zo",
-    authDomain: "my-finance-tracker-f2e77.firebaseapp.com",
-    projectId: "my-finance-tracker-f2e77",
-    storageBucket: "my-finance-tracker-f2e77.firebasestorage.app",
-    messagingSenderId: "326761442514",
-    appId: "1:326761442514:web:0a314b6a263db75516510b",
-    measurementId: "G-CT0B9S5E5P"
+    apiKey: "AIzaSyCkDIQ1DynjW_A2zZCu9cWbRu-fm8j0n0g",
+    authDomain: "mycontacts-915c4.firebaseapp.com",
+    projectId: "mycontacts-915c4",
+    storageBucket: "mycontacts-915c4.firebasestorage.app",
+    messagingSenderId: "559735451455",
+    appId: "1:559735451455:web:949dce1fc576555b156d8a",
+    measurementId: "G-B9P3QDGE6B"
 };
 
 let db = null;
