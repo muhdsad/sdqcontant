@@ -1,4 +1,4 @@
-const CACHE_NAME = "nexus-contacts-v1";
+const CACHE_NAME = "nexus-contacts-v2";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -13,10 +13,11 @@ const ASSETS_TO_CACHE = [
 
 // Install Event
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
@@ -35,18 +36,20 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch Event (Stale-While-Revalidate)
+// Fetch Event (Network-First: always fetch latest code if online, fallback to cache offline)
 self.addEventListener("fetch", (event) => {
-  // Let Firebase requests pass through to network
-  if (event.request.url.includes("firestore") || 
-      event.request.url.includes("firebase") ||
-      event.request.url.includes("googleapis")) {
+  // Let Firebase / Google API requests pass directly to network
+  if (
+    event.request.url.includes("firestore") || 
+    event.request.url.includes("firebase") ||
+    event.request.url.includes("googleapis")
+  ) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === "basic") {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -54,9 +57,9 @@ self.addEventListener("fetch", (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });

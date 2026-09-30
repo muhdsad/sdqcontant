@@ -173,10 +173,13 @@ function initApp() {
         return;
     }
 
-    // Try listening to Firestore
+let lastSyncErrorMessage = "";
+
+// Try listening to Firestore
     try {
         db.collection(COLLECTION_NAME).orderBy("name").onSnapshot((snapshot) => {
             isFirebaseOnline = true;
+            lastSyncErrorMessage = "";
             updateSyncBadge("online", "Firebase Synced");
             
             const fetched = [];
@@ -190,10 +193,17 @@ function initApp() {
             render();
         }, (error) => {
             console.warn("Firestore onSnapshot error:", error);
-            enableLocalStorageMode("Local Mode (Firebase permission/network issue)");
+            if (error && error.code === 'permission-denied') {
+                lastSyncErrorMessage = "Permission Denied: Please check Firestore Rules in Firebase Console (allow read, write on 'contacts').";
+                enableLocalStorageMode("Firebase Permission Denied. Check Firestore Rules in Console.");
+            } else {
+                lastSyncErrorMessage = (error && error.message) || "Firebase connection error. Check Firestore database setup.";
+                enableLocalStorageMode("Local Mode (Firebase offline/unavailable)");
+            }
         });
     } catch (err) {
         console.warn("Firestore error:", err);
+        lastSyncErrorMessage = err.message || "Failed to initialize Firestore.";
         enableLocalStorageMode("Local Storage Mode");
     }
 }
@@ -1040,6 +1050,19 @@ exportBtn.addEventListener("click", () => {
 // 10. Search, Filters & View Switching
 // ==========================================================================
 function setupEventListeners() {
+    // Sync status badge info click
+    if (syncStatusEl) {
+        syncStatusEl.style.cursor = "pointer";
+        syncStatusEl.addEventListener("click", () => {
+            if (isFirebaseOnline) {
+                showToast("Connected to Firebase Firestore ('contacts'). All devices are in sync.", "success");
+            } else {
+                const msg = lastSyncErrorMessage || "Running in Local Mode. Changes are only saved on this device.";
+                showToast(msg, "error");
+            }
+        });
+    }
+
     // Open add modal
     openAddBtn.addEventListener("click", openAddModal);
     emptyAddBtn.addEventListener("click", openAddModal);
